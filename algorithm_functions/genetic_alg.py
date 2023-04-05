@@ -11,7 +11,7 @@ from sklearn.metrics import RocCurveDisplay
 from sklearn.metrics import confusion_matrix
 import roc_plot
 
-def fit_and_evaluate(x, y, classifier, kfold, scoring="accuracy",n_vars=7,npop=20):
+def fit_and_evaluate(x, y, classifier, kfold, scoring, n_vars ,npop ):
         #Implementing the genetic algortihm
         model = GeneticSelectionCV(
                 classifier, cv=kfold, verbose=1,
