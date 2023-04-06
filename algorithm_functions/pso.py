@@ -6,8 +6,8 @@ from sklearn.model_selection import cross_val_score
 from niapy.problems import Problem
 from niapy.task import Task
 from niapy.algorithms.basic import ParticleSwarmOptimization
-import evaluate_model
-import roc_plot
+from . import evaluate_model
+from . import roc_plot
 
 
 class SVMFeatureSelection(Problem):
@@ -25,7 +25,8 @@ class SVMFeatureSelection(Problem):
         if num_selected == 0:
             return 1.0
         accuracy = cross_val_score(
-            self.classifier, self.X_train[:, selected], self.y_train, self.kf).mean()
+            estimator=self.classifier,X= self.X_train[:, selected], 
+            y=self.y_train, cv=self.kf).mean()
         score = 1 - accuracy
         num_features = self.X_train.shape[1]
         return self.alpha * score + (1 - self.alpha) * (num_selected / num_features)
@@ -33,10 +34,11 @@ class SVMFeatureSelection(Problem):
 
 def Particle(x, y, kf, classifier, scoring, output_path, p_size=20):
     X = np.array(x)
-    y = np.array(y)
+    Y = np.array(y)
     feature_names = np.array(x.columns.to_list())
+    model=classifier
 
-    problem = SVMFeatureSelection(X, y, classifier)
+    problem = SVMFeatureSelection(X, Y, kf=kf, classifier=model)
     task = Task(problem, max_iters=100)
     algorithm = ParticleSwarmOptimization(
         population_size=p_size, seed=42, n_jobs=-1, VERBOSE=True)
@@ -47,11 +49,8 @@ def Particle(x, y, kf, classifier, scoring, output_path, p_size=20):
     print('Selected features:', ', '.join(
         feature_names[selected_features].tolist()))
     new_feat = feature_names[selected_features].tolist()
+    print(new_feat)
 
-    x = X[:, selected_features]
-    res = evaluate_model.evaluate_classifier(x,
+    res = evaluate_model.evaluate_classifier(x[new_feat],
                                              y, classifier_model=classifier, kfold_cv=kf, scoring_metric=scoring, output_path=output_path)
-
-    roc_plot.plot_roc_kf(X=x, y=y, classifier=classifier)
-
     return res

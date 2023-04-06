@@ -2,7 +2,8 @@ from sklearn.model_selection import cross_val_predict, GridSearchCV
 from genetic_selection import GeneticSelectionCV
 from sklearn.model_selection import KFold
 from sklearn.metrics import RocCurveDisplay
-import evaluate_model
+from . import evaluate_model
+from . import roc_plot
 
 
 def new_estimator(x, y, classifier, kfold, param_grid, njobs=1):

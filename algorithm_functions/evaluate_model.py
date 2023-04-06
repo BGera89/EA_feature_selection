@@ -5,7 +5,7 @@ from genetic_selection import GeneticSelectionCV
 from sklearn.model_selection import KFold
 from sklearn.metrics import RocCurveDisplay
 from sklearn.metrics import confusion_matrix
-import roc_plot
+from . import roc_plot
 
 
 def evaluate_classifier(x, y, scoring_metric, classifier_model, kfold_cv, output_path):
@@ -51,7 +51,7 @@ def evaluate_classifier(x, y, scoring_metric, classifier_model, kfold_cv, output
     print("Specificity is: ", specificity)
     print("ROC AUC score is: ", roc_auc.mean())
     print(scores)
-    roc_plot.plot_roc_kf(X=x, y=y, classifier=classifier_model)
+    roc_plot.plot_roc_kf(X=x, y=y, classifier=classifier_model, cv=kfold_cv)
 
     results_dict = {
         "Features": x.columns.to_list(),
@@ -63,6 +63,7 @@ def evaluate_classifier(x, y, scoring_metric, classifier_model, kfold_cv, output
     }
 
     df_results = pd.DataFrame.from_dict(results_dict)
+    print('choosen features: ', x.columns.to_list())
 
     # Saving the results to a csv file
     df_results.to_csv(output_path, index=False)

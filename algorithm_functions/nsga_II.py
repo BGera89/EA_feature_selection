@@ -11,8 +11,8 @@ from sklearn.base import clone
 from pymoo.core.problem import ElementwiseProblem
 from sklearn.model_selection import cross_val_score
 import autograd.numpy as anp
-import evaluate_model
-import roc_plot
+from . import evaluate_model
+from . import roc_plot
 
 
 class FeatureSelectionAccuracyCostMultiProblem(ElementwiseProblem):
@@ -40,8 +40,8 @@ class FeatureSelectionAccuracyCostMultiProblem(ElementwiseProblem):
         #f2=-1*np.mean(cross_val_score(clf, self.X[:,selected], self.y,cv=kf, scoring="accuracy"))
         num_features = self.n_max
         alpha = 0.99
-        score = 1-np.mean(cross_val_score(clf,
-                          self.X[:, selected], self.y, self.cv, scoring="accuracy"))
+        score = 1-np.mean(cross_val_score(estimator=clf,
+                          X=self.X[:, selected], y=self.y, cv=self.cv, scoring="accuracy"))
         num_selected = len(np.argwhere(selected == True))
         f2 = alpha * score + (1 - alpha) * (num_selected / num_features)
         b = anp.column_stack(np.array([f1, f2]))
@@ -123,17 +123,17 @@ class NSGAAccCost(BaseEstimator, ClassifierMixin):
         return total_cost
 
 
-def fit_nsga(X, y, clf, kf, p_size=14, scoring="accuracy"):
+def fit_nsga(X, y, clf, kf, output_path, p_size=14, scoring="accuracy"):
     X_ns = np.array(X)
     y = np.array(y)
     method = NSGAAccCost(clf, p_size=p_size)
     new_features = method.fit(X_ns, y)
     columns = X.columns.to_list()
     print(new_features.selected_features)
-    evaluate_model.evaluate_classifier(X[np.array(columns)[new_features.selected_features]],
-                                       y, classifier=clf, kfold=kf, scoring="accuracy")
+    res=evaluate_model.evaluate_classifier(X[np.array(columns)[new_features.selected_features]],
+                                       y, classifier_model=clf, kfold_cv=kf, scoring_metric=scoring,output_path=output_path)
 
     roc_plot.plot_roc_kf(X=X[np.array(columns)[
                          new_features.selected_features]], y=y, classifier=clf)
 
-    return np.array(columns)[new_features.selected_features]
+    return res

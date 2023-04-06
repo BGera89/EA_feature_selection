@@ -9,9 +9,10 @@ from genetic_selection import GeneticSelectionCV
 from sklearn.model_selection import KFold
 from sklearn.metrics import RocCurveDisplay
 from sklearn.metrics import confusion_matrix
-import roc_plot
+from . import evaluate_model
+from . import roc_plot
 
-def fit_and_evaluate(x, y, classifier, kfold, scoring, n_vars ,npop ):
+def fit_and_evaluate(x, y, classifier, kfold, scoring, n_vars ,npop, output_path ):
         #Implementing the genetic algortihm
         model = GeneticSelectionCV(
                 classifier, cv=kfold, verbose=1,
@@ -30,7 +31,7 @@ def fit_and_evaluate(x, y, classifier, kfold, scoring, n_vars ,npop ):
         #ezt javítsd meg
 
 
-        #cheching the scores with the new classifier
+        #cheching the scores with the new features
         scores_m=cross_val_predict(classifier, x[new_features], 
                 y, cv=kfold)
         matrix=confusion_matrix(y, scores_m)
@@ -39,26 +40,13 @@ def fit_and_evaluate(x, y, classifier, kfold, scoring, n_vars ,npop ):
         matrix_labels=matrix_labels.rename(columns={0:"predicted 0", 1:"predicted 1"}, index={0:"actual 0", 1:"actual 1"})
         print(matrix_labels)
         print("\n")
-
-        
-        scores=cross_val_score(classifier, x[new_features], 
-                y, cv=kfold, scoring="accuracy")
-        roc_auc=cross_val_score(classifier, x[new_features], 
-                y, cv=kfold, scoring="roc_auc")
-
-        sensitivity=matrix_labels["predicted 1"][1]/(matrix_labels["predicted 1"][1]+matrix_labels["predicted 0"][1])
-        specificity=matrix_labels["predicted 0"][0]/(matrix_labels["predicted 0"][0]+matrix_labels["predicted 1"][0])
-        #printing the scores with the ROC Curve
-        print("means score is: ", scores.mean())
-        print("sensitivity is: ", matrix_labels["predicted 1"][1]/(matrix_labels["predicted 1"][1]+matrix_labels["predicted 0"][1]))
-        print("specificity is: ", matrix_labels["predicted 0"][0]/(matrix_labels["predicted 0"][0]+matrix_labels["predicted 1"][0]))
-        print("ROC AUC score is: ", roc_auc.mean())
-        print(scores)
-
-        roc_plot.plot_roc_kf(X=x[new_features],y=y,classifier=classifier)
-
         print("Model: ", classifier)
-        return new_features, scores.mean(),sensitivity,specificity, roc_auc.mean(),classifier
+        
+        res=evaluate_model.evaluate_classifier(x[new_features],
+                                       y, classifier_model=classifier, kfold_cv=kfold, scoring_metric=scoring,output_path=output_path)
+
+        return res
+
 
 
 

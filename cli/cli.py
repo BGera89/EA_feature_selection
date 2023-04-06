@@ -1,18 +1,21 @@
-import argparse
-import numpy as np
 import pandas as pd
-from algorithm_functions import roc_plot
-from algorithm_functions import train_new_estimator
+import numpy as np
+import argparse
+import sys
+import os
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
 from algorithm_functions import simulated_annaeling
 from algorithm_functions import pso
 from algorithm_functions import nsga_II
 from algorithm_functions import genetic_alg
+from algorithm_functions import sffs
 from algorithm_functions import evaluate_model
-from sklearn.model_selection import KFold
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
-import sys
-sys.path.append('../algorithm_functions')
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import KFold
+
 
 
 # Setting up the arguments for the CLI
@@ -28,18 +31,22 @@ parser.add_argument('-mt', '--model_type', type=str,
                     default='SVC', choices=['SVC', 'Random_forest'])
 parser.add_argument('-fs', '--feature_selector', type=str,
                     help='Type of feature selection algorithm you want to use',
-                    default='GA', choices=['GA', 'NSGA', 'PSO', 'SA'])
+                    default='GA', choices=['GA', 'NSGA', 'PSO', 'SA', 'SFFS'])
 parser.add_argument('-l', '--label', type=str,
                     help='name of the column that contrains the label (the y, or the value we are predicting). Default is quality',
                     default='quality')
-parser.add_argument('-s', '--split', type=float,
-                    help='The percentage of the train-test split (the value you pass will give you the train percentage). Default is: 0.25',
-                    default=0.25)
-parser.add_argument('-op', '--output_path', type=str,
-                    help='Specify the path of the output file. It will contain the evaluation metrics, and the predicted values with true values in a separate file. Default is the currect dir',
-                    default='')
+parser.add_argument('-s', '--split', type=int,
+                    help='The number of the k-fold splits. Default is: 5',
+                    default=5)
 parser.add_argument('-tf', '--train_features', type=str, nargs='*',
                     help='Features (columns of csv) for the model to make the predictions. Default uses all. Write your columns names afer each other. e.g. -mf pH sulphates. If there the feature consists of multiple words write it in double quotes like this: \"fixed acidity\". If the number of feature is one or two it will create visualizations for those (2D if only one feature is present, 3D if two features are present)')
+parser.add_argument('-sc', '--scoring', type=str,
+                    help='The type of critera you want to train your model on. Default = accuracy',
+                    default='accuracy')
+parser.add_argument('-op', '--output_path', type=str,
+                    help='Specify the path of the output file. It will contain the evaluation metrics, and the predicted values with true values in a separate file. Default is the currect dir',
+                    default='output')
+
 # SVM classifier's arguments
 parser.add_argument('-sk', '--svm_kernel', type=str,
                     help='The typeof the kernel for the SVR model. Default is rbf', choices=['linear', 'poly', 'rbf', 'sigmoid', 'precomputed'],
@@ -106,8 +113,9 @@ parser.add_argument('-np', '--number_population', type=int,
 args = parser.parse_args()
 
 
-df = pd.read_csv(args.file_path)
-X = df.drop(columns=args.label)
+df = pd.read_excel(args.filepath)
+X = df.drop(columns=[args.label])
+X = X.iloc[:, 27:]
 y = df[args.label]
 
 # cross validation with a split
@@ -116,22 +124,35 @@ kf = KFold(n_splits=args.split, shuffle=True, random_state=42)
 
 if args.model_type == 'SVC':
     model = SVC(kernel=args.svm_kernel, degree=args.degree, gamma=args.gamma, coef0=args.coef0,
-                tol=args.tol, C=args.C, epsilon=args.epsilon, shrinking=args.shrinking,
-                cache_size=args.cache_size, verbose=args.verbose, max_iter=args.max_iter)
+                tol=args.tol, C=args.C, shrinking=args.shrinking,
+                cache_size=args.cache_size, verbose=args.verbose)
 else:
-    model = RandomForestClassifier()
+    model = model = RandomForestClassifier(n_estimators=args.n_estimators, criterion=args.criterion, max_depth=args.max_depth,
+                                           min_samples_split=args.min_samples_split, min_samples_leaf=args.min_samples_leaf, max_features=args.max_features,
+                                           random_state=42, verbose=args.verbose, class_weight=args.class_weight)
 
 if args.feature_selector == 'GA':
-    new_features, acc, sensitivity, specificity, classifier = genetic_alg.fit_and_evaluate(
-        X, y, model, kfold=kf, scoring=args.scoring, n_vars=args.n_vars, npop=args.number_population)
+    genetic_alg.fit_and_evaluate(
+        X, y, model, kfold=kf, scoring=args.scoring, 
+        n_vars=args.n_vars, npop=args.number_population, 
+        output_path=args.output_path+'_GA.csv')
 
 if args.feature_selector == 'NSGA':
-    new_features, acc, sensitivity, specificity, classifier = nsga_II.fit_nsga(
-        X=X, y=y, clf=model, kf=kf, output_path=args.output_path, p_size=args.number_population, scoring=args.scoring)
+    nsga_II.fit_nsga(
+        X=X, y=y, clf=model, kf=kf, 
+        output_path=args.output_path +'_NSGA.csv', 
+        p_size=args.number_population, scoring=args.scoring)
 
 if args.feature_selector == 'PSO':
-    new_features, acc, sensitivity, specificity, classifier = pso.Particle(x=X, y=y, kf=kf, classifier=model, scoring=args.scoring,
-                                                                           output_path=args.output_path, p_size=args.number_population)
+   pso.Particle(x=X, y=y, kf=kf, classifier=model, 
+                scoring=args.scoring,
+                output_path=args.output_path+'_PSO.csv', 
+                p_size=args.number_population)
 if args.feature_selector == 'SA':
     simulated_annaeling.simulated_annealing(
-        X, y, model, kf, args.scoring, args.output_path)
+        X, y, model, kf, args.scoring, args.output_path+'_SA.csv')
+    
+if args.feature_selector == 'SFFS':
+    sffs.sfs_fit_and_evaluate(
+        X=X, y=y, model=model,cv=kf, scoring=args.scoring,
+          output_path=args.output_path+'_SFFS.csv')

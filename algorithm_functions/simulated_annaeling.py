@@ -2,9 +2,10 @@ import random
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import cross_val_score
-
-import evaluate_model
-import roc_plot
+import sys
+import os
+from . import evaluate_model
+from . import roc_plot
 
 
 def train_model(X, y, classifier, cv, scoring="accuracy"):
@@ -45,7 +46,7 @@ def simulated_annealing(X_train,
 
     print(curr_subset)
     X_curr = X_train.iloc[:, list(curr_subset)]
-    prev_metric = train_model(X_curr, y_train, classifier)
+    prev_metric = train_model(X_curr, y_train, classifier, cv=cv)
     best_metric = prev_metric
 
     for i in range(maxiters):
@@ -80,7 +81,7 @@ def simulated_annealing(X_train,
                 break
 
         X_new = X_train.iloc[:, list(new_subset)]
-        metric = train_model(X_new, y_train, classifier)
+        metric = train_model(X_new, y_train, classifier, cv=cv)
 
         if metric > prev_metric:
             print('Local improvement in metric from {:8.4f} to {:8.4f} '
@@ -145,7 +146,5 @@ def simulated_annealing(X_train,
 
     res = evaluate_model.evaluate_classifier(x,
                                              y, classifier_model=classifier, kfold_cv=cv, scoring_metric=scoring, output_path=output_path)
-
-    roc_plot.plot_roc_kf(X=x, y=y, classifier=classifier)
 
     return res
