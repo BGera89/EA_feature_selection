@@ -46,6 +46,9 @@ parser.add_argument('-sc', '--scoring', type=str,
 parser.add_argument('-op', '--output_path', type=str,
                     help='Specify the path of the output file. It will contain the evaluation metrics, and the predicted values with true values in a separate file. Default is the currect dir',
                     default='output')
+parser.add_argument('-nn', '--not_needed', type=int,
+                    help='Cuts the not needed columns from the DataFrame (like the first ID column). Default = 27',
+                    default=27)
 
 # SVM classifier's arguments
 parser.add_argument('-sk', '--svm_kernel', type=str,
@@ -73,9 +76,6 @@ parser.add_argument('-e', '--epsilon', type=float,
 parser.add_argument('-sh', '--shrinking', type=bool,
                     help='Whether to use the shrinking heuristic. See the User Guide. Default is True',
                     default=True)
-parser.add_argument('-cs', '--cache_size', type=float,
-                    help='Specify the size of the kernel cache (in MB). Default is 200.0',
-                    default=200.0)
 parser.add_argument('-v', '--verbose', type=bool,
                     help='Enable verbose output. Note that this setting takes advantage of a per-process runtime setting in libsvm that, if enabled, may not work properly in a multithreaded context. Default is False',
                     default=False)
@@ -115,7 +115,7 @@ args = parser.parse_args()
 
 df = pd.read_excel(args.filepath)
 X = df.drop(columns=[args.label])
-X = X.iloc[:, 27:]
+X = X.iloc[:, args.not_needed:]
 y = df[args.label]
 
 # cross validation with a split
@@ -124,8 +124,7 @@ kf = KFold(n_splits=args.split, shuffle=True, random_state=42)
 
 if args.model_type == 'SVC':
     model = SVC(kernel=args.svm_kernel, degree=args.degree, gamma=args.gamma, coef0=args.coef0,
-                tol=args.tol, C=args.C, shrinking=args.shrinking,
-                cache_size=args.cache_size, verbose=args.verbose)
+                tol=args.tol, C=args.C, shrinking=args.shrinking, verbose=args.verbose)
 else:
     model = model = RandomForestClassifier(n_estimators=args.n_estimators, criterion=args.criterion, max_depth=args.max_depth,
                                            min_samples_split=args.min_samples_split, min_samples_leaf=args.min_samples_leaf, max_features=args.max_features,
