@@ -3,7 +3,8 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import cross_val_score
 
-from algorithm_functions.evaluate_model import evaluate_new
+import evaluate_model
+import roc_plot
 
 
 def train_model(X, y, classifier, cv, scoring="accuracy"):
@@ -21,6 +22,8 @@ def train_model(X, y, classifier, cv, scoring="accuracy"):
 
 def simulated_annealing(X_train,
                         y_train, classifier,
+                        cv, scoring,
+                        output_path,
                         maxiters=500,
                         alpha=0.99,
                         beta=1,
@@ -137,8 +140,12 @@ def simulated_annealing(X_train,
     results = results.dropna(axis=0, how='all')
 
     print("results", results)
-    evaluate_new(X_train[best_subset_cols], y_train,
-                 classifier=classifier, scoring="accuracy")
-    print("best_metric", best_metric)
-    print("best_subset_cols", best_subset_cols)
-    return results, best_metric, best_subset_cols
+    x = X_train[best_subset_cols]
+    y = y_train
+
+    res = evaluate_model.evaluate_classifier(x,
+                                             y, classifier_model=classifier, kfold_cv=cv, scoring_metric=scoring, output_path=output_path)
+
+    roc_plot.plot_roc_kf(X=x, y=y, classifier=classifier)
+
+    return res

@@ -12,6 +12,7 @@ from pymoo.core.problem import ElementwiseProblem
 from sklearn.model_selection import cross_val_score
 import autograd.numpy as anp
 import evaluate_model
+import roc_plot
 
 
 class FeatureSelectionAccuracyCostMultiProblem(ElementwiseProblem):
@@ -122,13 +123,17 @@ class NSGAAccCost(BaseEstimator, ClassifierMixin):
         return total_cost
 
 
-def fit_nsga(X, y, classifier=SVC(random_state=42), p_size=14, scoring="accuracy", kfold=kf):
+def fit_nsga(X, y, clf, kf, p_size=14, scoring="accuracy"):
     X_ns = np.array(X)
     y = np.array(y)
-    method = NSGAAccCost(classifier, p_size=p_size)
+    method = NSGAAccCost(clf, p_size=p_size)
     new_features = method.fit(X_ns, y)
     columns = X.columns.to_list()
     print(new_features.selected_features)
-    evaluate_model.evaluate_new(X[np.array(columns)[new_features.selected_features]],
-                 y, classifier=classifier, kfold=kfold, scoring="accuracy")
+    evaluate_model.evaluate_classifier(X[np.array(columns)[new_features.selected_features]],
+                                       y, classifier=clf, kfold=kf, scoring="accuracy")
+
+    roc_plot.plot_roc_kf(X=X[np.array(columns)[
+                         new_features.selected_features]], y=y, classifier=clf)
+
     return np.array(columns)[new_features.selected_features]
