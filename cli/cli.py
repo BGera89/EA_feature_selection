@@ -13,9 +13,10 @@ from algorithm_functions import genetic_alg
 from algorithm_functions import sffs
 from algorithm_functions import evaluate_model
 from sklearn.svm import SVC
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import KFold
-
+from xgboost import XGBClassifier
 
 
 # Setting up the arguments for the CLI
@@ -28,7 +29,7 @@ parser.add_argument('-fp', '--filepath', type=str,
                     default='dataset_dir/X.csv')
 parser.add_argument('-mt', '--model_type', type=str,
                     help='Type of the model you want to use. Default = SVC ',
-                    default='SVC', choices=['SVC', 'Random_forest'])
+                    default='SVC', choices=['SVC', 'RF',])
 parser.add_argument('-fs', '--feature_selector', type=str,
                     help='Type of feature selection algorithm you want to use',
                     default='GA', choices=['GA', 'NSGA', 'PSO', 'SA', 'SFFS'])
@@ -125,10 +126,9 @@ kf = KFold(n_splits=args.split, shuffle=True, random_state=42)
 if args.model_type == 'SVC':
     model = SVC(kernel=args.svm_kernel, degree=args.degree, gamma=args.gamma, coef0=args.coef0,
                 tol=args.tol, C=args.C, shrinking=args.shrinking, verbose=args.verbose)
+
 else:
-    model = model = RandomForestClassifier(n_estimators=args.n_estimators, criterion=args.criterion, max_depth=args.max_depth,
-                                           min_samples_split=args.min_samples_split, min_samples_leaf=args.min_samples_leaf, max_features=args.max_features,
-                                           random_state=42, verbose=args.verbose, class_weight=args.class_weight)
+    model = model = XGBClassifier()
 
 if args.feature_selector == 'GA':
     genetic_alg.fit_and_evaluate(
