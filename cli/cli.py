@@ -110,6 +110,15 @@ parser.add_argument('-np', '--number_population', type=int,
                     help='The number of the population for each algorithm. Default=100',
                     default=100)
 
+#Iterations
+parser.add_argument('-ib', '--iteration_true', type=bool,
+                    help='decide if you want to run the algorithms iteratively',
+                    default=False)
+
+parser.add_argument('-it', '--iterations', type=int,
+                    help='The number of iterations for each algorithm. Default=10',
+                    default=10)
+
 
 args = parser.parse_args()
 
@@ -130,28 +139,58 @@ if args.model_type == 'SVC':
 else:
     model = model = XGBClassifier()
 
-if args.feature_selector == 'GA':
-    genetic_alg.fit_and_evaluate(
-        X, y, model, kfold=kf, scoring=args.scoring, 
-        n_vars=args.n_vars, npop=args.number_population, 
-        output_path=args.output_path+'_GA.csv')
+if args.iteration_true==True:
+    for i in range(args.iterations):
+        if args.feature_selector == 'GA':
+            genetic_alg.fit_and_evaluate(
+                X, y, model, kfold=kf, scoring=args.scoring, 
+                n_vars=args.n_vars, npop=args.number_population, 
+                output_path=args.output_path+'_GA_iter'+str(i)+'.csv')
 
-if args.feature_selector == 'NSGA':
-    nsga_II.fit_nsga(
-        X=X, y=y, clf=model, kf=kf, 
-        output_path=args.output_path +'_NSGA.csv', 
-        p_size=args.number_population, scoring=args.scoring)
+        if args.feature_selector == 'NSGA':
+            nsga_II.fit_nsga(
+                X=X, y=y, clf=model, kf=kf, 
+                output_path=args.output_path +'_NSGA_iter'+str(i)+'.csv', 
+                p_size=args.number_population, scoring=args.scoring)
 
-if args.feature_selector == 'PSO':
-   pso.Particle(x=X, y=y, kf=kf, classifier=model, 
-                scoring=args.scoring,
-                output_path=args.output_path+'_PSO.csv', 
-                p_size=args.number_population)
-if args.feature_selector == 'SA':
-    simulated_annaeling.simulated_annealing(
-        X, y, model, kf, args.scoring, args.output_path+'_SA.csv')
-    
-if args.feature_selector == 'SFFS':
-    sffs.sfs_fit_and_evaluate(
-        X=X, y=y, model=model,cv=kf, scoring=args.scoring,
-          output_path=args.output_path+'_SFFS.csv')
+        if args.feature_selector == 'PSO':
+            pso.Particle(x=X, y=y, kf=kf, classifier=model, 
+                        scoring=args.scoring,
+                        output_path=args.output_path+'_PSO_iter'+str(i)+'.csv', 
+                        p_size=args.number_population)
+        if args.feature_selector == 'SA':
+            simulated_annaeling.simulated_annealing(
+                X, y, model, kf, args.scoring, args.output_path+'_SA_iter'+str(i)+'.csv')
+            
+        if args.feature_selector == 'SFFS':
+            sffs.sfs_fit_and_evaluate(
+                X=X, y=y, model=model,cv=kf, scoring=args.scoring,
+                output_path=args.output_path+'_SFFS_iter'+str(i)+'.csv')
+
+else:
+    if args.feature_selector == 'GA':
+        genetic_alg.fit_and_evaluate(
+            X, y, model, kfold=kf, scoring=args.scoring, 
+            n_vars=args.n_vars, npop=args.number_population, 
+            output_path=args.output_path+'_GA.csv')
+
+    if args.feature_selector == 'NSGA':
+        nsga_II.fit_nsga(
+            X=X, y=y, clf=model, kf=kf, 
+            output_path=args.output_path +'_NSGA.csv', 
+            p_size=args.number_population, scoring=args.scoring)
+
+    if args.feature_selector == 'PSO':
+        pso.Particle(x=X, y=y, kf=kf, classifier=model, 
+                    scoring=args.scoring,
+                    output_path=args.output_path+'_PSO.csv', 
+                    p_size=args.number_population)
+    if args.feature_selector == 'SA':
+        simulated_annaeling.simulated_annealing(
+            X, y, model, kf, args.scoring, args.output_path+'_SA.csv')
+        
+    if args.feature_selector == 'SFFS':
+        sffs.sfs_fit_and_evaluate(
+            X=X, y=y, model=model,cv=kf, scoring=args.scoring,
+            output_path=args.output_path+'_SFFS.csv')
+
