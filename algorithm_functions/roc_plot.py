@@ -27,7 +27,7 @@ def plot_roc_kf(X, y, classifier, cv):
         aucs.append(viz.roc_auc)
 
     ax.plot([0, 1], [0, 1], linestyle="--", lw=2,
-            color="r", label="Chance", alpha=0.8)
+            color="r", label="Chance", alpha=0.8 )
 
     mean_tpr = np.mean(tprs, axis=0)
     mean_tpr[-1] = 1.0
