@@ -35,7 +35,6 @@ class FeatureSelectionAccuracyCostMultiProblem(ElementwiseProblem):
 
         clf = clone(self.estimator)
         selected = x > 0.5
-
         f1 = len(np.argwhere(selected == True))
         #f2=-1*np.mean(cross_val_score(clf, self.X[:,selected], self.y,cv=kf, scoring="accuracy"))
         num_features = self.n_max
@@ -43,6 +42,7 @@ class FeatureSelectionAccuracyCostMultiProblem(ElementwiseProblem):
         score = 1-np.mean(cross_val_score(estimator=clf,
                           X=self.X[:, selected], y=self.y, cv=self.cv, scoring="accuracy"))
         num_selected = len(np.argwhere(selected == True))
+
         f2 = alpha * score + (1 - alpha) * (num_selected / num_features)
         b = anp.column_stack(np.array([f1, f2]))
         out["F"] = b
@@ -53,12 +53,13 @@ class FeatureSelectionAccuracyCostMultiProblem(ElementwiseProblem):
 
 
 class NSGAAccCost(BaseEstimator, ClassifierMixin):
-    def __init__(self, base_estimator, scale_features=0.5, test_size=0.5, pareto_decision='accuracy', criteria_weights=None, objectives=2, p_size=100, c_prob=0.1, m_prob=0.1):
+    def __init__(self, base_estimator, cv,scale_features=0.5, test_size=0.5, pareto_decision='accuracy', criteria_weights=None, objectives=2, p_size=100, c_prob=0.1, m_prob=0.1):
         self.base_estimator = base_estimator
         self.test_size = test_size
         self.p_size = p_size
         self.c_prob = c_prob
         self.m_prob = m_prob
+        self.cv= cv
 
         self.feature_costs = None
         self.estimator = None
@@ -74,8 +75,11 @@ class NSGAAccCost(BaseEstimator, ClassifierMixin):
     def fit(self, X, y):
         features = range(X.shape[1])
         problem = FeatureSelectionAccuracyCostMultiProblem(
-            X, y, self.test_size, self.base_estimator, features, self.feature_costs, self.scale_features, self.objectives)
+            X, y, self.test_size, self.base_estimator,  features, 
+            self.cv,
+            self.feature_costs, self.scale_features, self.objectives)
 
+        print(features)
         algorithm = NSGA2(
             pop_size=self.p_size,
             sampling=BinaryRandomSampling(),
@@ -99,6 +103,7 @@ class NSGAAccCost(BaseEstimator, ClassifierMixin):
 
         # X returns True and False which features has been selected
         if self.pareto_decision == 'accuracy':
+            print(self.solutions)
             index = np.argmin(self.solutions[:, 1], axis=0)
             self.selected_features = res.X[index]
         elif self.pareto_decision == 'cost':
@@ -126,14 +131,14 @@ class NSGAAccCost(BaseEstimator, ClassifierMixin):
 def fit_nsga(X, y, clf, kf, output_path, p_size=14, scoring="accuracy"):
     X_ns = np.array(X)
     y = np.array(y)
-    method = NSGAAccCost(clf, p_size=p_size)
+    method = NSGAAccCost(clf, cv=kf, p_size=p_size)
     new_features = method.fit(X_ns, y)
     columns = X.columns.to_list()
     print(new_features.selected_features)
     res=evaluate_model.evaluate_classifier(X[np.array(columns)[new_features.selected_features]],
                                        y, classifier_model=clf, kfold_cv=kf, scoring_metric=scoring,output_path=output_path)
 
-    roc_plot.plot_roc_kf(X=X[np.array(columns)[
-                         new_features.selected_features]], y=y, classifier=clf)
+    #roc_plot.plot_roc_kf(X=X[np.array(columns)[
+    #                     new_features.selected_features]], y=y, classifier=clf)
 
     return res

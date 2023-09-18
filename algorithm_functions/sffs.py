@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-def sfs_fit_and_evaluate(model,X,y,cv, scoring, output_path,n_features=10):
+def sfs_fit_and_evaluate(model,X,y,cv, scoring, output_path,n_features=31):
     
     kf=cv
     sfs=SFS(model, k_features=n_features, forward=True, 

@@ -16,7 +16,9 @@ from sklearn.svm import SVC
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import KFold
-from xgboost import XGBClassifier
+from algorithm_functions import train_new_estimator
+
+#from xgboost import XGBClassifier
 
 
 # Setting up the arguments for the CLI
@@ -49,7 +51,13 @@ parser.add_argument('-op', '--output_path', type=str,
                     default='output')
 parser.add_argument('-nn', '--not_needed', type=int,
                     help='Cuts the not needed columns from the DataFrame (like the first ID column). Default = 27',
-                    default=27)
+                    default=1)
+parser.add_argument('-nne', '--not_needed_end', type=int,
+                    help='Cuts the not needed columns from the DataFrame (like the first ID column). Default = 27',
+                    default=-1)
+parser.add_argument('-ho', '--hyperparameter_opt', type=bool,
+                    help='Cuts the not needed columns from the DataFrame (like the first ID column). Default = 27',
+                    default=False)
 
 # SVM classifier's arguments
 parser.add_argument('-sk', '--svm_kernel', type=str,
@@ -123,9 +131,9 @@ parser.add_argument('-it', '--iterations', type=int,
 args = parser.parse_args()
 
 
-df = pd.read_excel(args.filepath)
+df = pd.read_csv(args.filepath)
 X = df.drop(columns=[args.label])
-X = X.iloc[:, args.not_needed:]
+X = X.iloc[:, args.not_needed:args.not_needed_end]
 y = df[args.label]
 
 # cross validation with a split
@@ -136,61 +144,87 @@ if args.model_type == 'SVC':
     model = SVC(kernel=args.svm_kernel, degree=args.degree, gamma=args.gamma, coef0=args.coef0,
                 tol=args.tol, C=args.C, shrinking=args.shrinking, verbose=args.verbose)
 
+    param_grid={
+    'C': [0.1, 1, 10],
+    'kernel': ['linear', 'rbf', 'poly', 'sigmoid'],
+    'gamma': ['scale', 'auto', 0.1, 1],
+    'degree': [2, 3, 4],
+    'coef0': [0.0, 1.0, 2.0]
+    }
 else:
-    model = model = XGBClassifier()
-
+    model = RandomForestClassifier(n_estimators=args.n_estimators, criterion=args.criterion,
+                                    max_depth=args.max_depth, min_samples_split=args.min_samples_split,
+                                    min_samples_leaf=args.min_samples_leaf, max_features=args.max_features,
+                                    bootstrap=args.bootstrap, class_weight=args.class_weight, random_state=42,
+                                    n_jobs=8)
+    param_grid= {
+    'n_estimators': [50, 100, 200],
+    'max_depth': [None, 10, 20, 30],
+    'min_samples_split': [2, 5, 10],
+    'min_samples_leaf': [1, 2, 4],
+    'max_features': ['auto', 'sqrt', 'log2'],
+    'bootstrap': [True, False]
+    }
 if args.iteration_true==True:
     for i in range(args.iterations):
         if args.feature_selector == 'GA':
             genetic_alg.fit_and_evaluate(
                 X, y, model, kfold=kf, scoring=args.scoring, 
                 n_vars=args.n_vars, npop=args.number_population, 
-                output_path=args.output_path+'_GA_iter'+str(i)+'.csv')
+                output_path=args.output_path+'_GA_iter'+str(i)+'_'+args.model_type+'.csv')
 
         if args.feature_selector == 'NSGA':
             nsga_II.fit_nsga(
                 X=X, y=y, clf=model, kf=kf, 
-                output_path=args.output_path +'_NSGA_iter'+str(i)+'.csv', 
+                output_path=args.output_path +'_NSGA_iter'+str(i)+'_'+args.model_type+'.csv', 
                 p_size=args.number_population, scoring=args.scoring)
 
         if args.feature_selector == 'PSO':
             pso.Particle(x=X, y=y, kf=kf, classifier=model, 
                         scoring=args.scoring,
-                        output_path=args.output_path+'_PSO_iter'+str(i)+'.csv', 
+                        output_path=args.output_path+'_PSO_iter'+str(i)+'_'+args.model_type+'.csv', 
                         p_size=args.number_population)
         if args.feature_selector == 'SA':
             simulated_annaeling.simulated_annealing(
-                X, y, model, kf, args.scoring, args.output_path+'_SA_iter'+str(i)+'.csv')
+                X, y, model, kf, args.scoring, args.output_path+'_SA_iter'+str(i)+'_'+args.model_type+'.csv')
             
         if args.feature_selector == 'SFFS':
             sffs.sfs_fit_and_evaluate(
                 X=X, y=y, model=model,cv=kf, scoring=args.scoring,
-                output_path=args.output_path+'_SFFS_iter'+str(i)+'.csv')
+                output_path=args.output_path+'_SFFS_iter'+str(i)+'_'+args.model_type+'.csv')
 
 else:
     if args.feature_selector == 'GA':
         genetic_alg.fit_and_evaluate(
             X, y, model, kfold=kf, scoring=args.scoring, 
             n_vars=args.n_vars, npop=args.number_population, 
-            output_path=args.output_path+'_GA.csv')
+            output_path=args.output_path+'_'+args.model_type+'_GA.csv')
 
     if args.feature_selector == 'NSGA':
         nsga_II.fit_nsga(
             X=X, y=y, clf=model, kf=kf, 
-            output_path=args.output_path +'_NSGA.csv', 
+            output_path=args.output_path +'_'+args.model_type+'_NSGA.csv', 
             p_size=args.number_population, scoring=args.scoring)
 
     if args.feature_selector == 'PSO':
         pso.Particle(x=X, y=y, kf=kf, classifier=model, 
                     scoring=args.scoring,
-                    output_path=args.output_path+'_PSO.csv', 
+                    output_path=args.output_path+'_'+args.model_type+'_PSO.csv', 
                     p_size=args.number_population)
     if args.feature_selector == 'SA':
         simulated_annaeling.simulated_annealing(
-            X, y, model, kf, args.scoring, args.output_path+'_SA.csv')
+            X, y, model, kf, args.scoring, args.output_path+'_'+args.model_type+'_SA.csv')
         
     if args.feature_selector == 'SFFS':
         sffs.sfs_fit_and_evaluate(
             X=X, y=y, model=model,cv=kf, scoring=args.scoring,
-            output_path=args.output_path+'_SFFS.csv')
+            output_path=args.output_path+'_'+args.model_type+'_SFFS.csv')
 
+    if args.hyperparameter_opt == True:
+        features=pd.read_csv(args.output_path+'_'+args.model_type+'_'+args.feature_selector+'.csv')
+        train_new_estimator.new_estimator(x=X[features['Features']], 
+                                          y=y,
+                                          classifier=model,
+                                          kfold=kf,
+                                          param_grid_est=param_grid,
+                                          output_path_=args.output_path+'_'+args.model_type+'_'+args.feature_selector+'param_opt.csv')

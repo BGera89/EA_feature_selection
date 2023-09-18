@@ -51,7 +51,7 @@ def evaluate_classifier(x, y, scoring_metric, classifier_model, kfold_cv, output
     print("Specificity is: ", specificity)
     print("ROC AUC score is: ", roc_auc.mean())
     print(scores)
-    roc_plot.plot_roc_kf(X=x, y=y, classifier=classifier_model, cv=kfold_cv)
+    #roc_plot.plot_roc_kf(X=x, y=y, classifier=classifier_model, cv=kfold_cv)
 
     results_dict = {
         "Features": x.columns.to_list(),
