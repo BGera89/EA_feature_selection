@@ -52,5 +52,6 @@ def Particle(x, y, kf, classifier, scoring, output_path, p_size=20):
     print(new_feat)
 
     res = evaluate_model.evaluate_classifier(x[new_feat],
-                                             y, classifier_model=classifier, kfold_cv=kf, scoring_metric=scoring, output_path=output_path)
+                                             y, classifier_model=classifier, kfold_cv=kf, 
+                                             scoring_metric=scoring, output_path=output_path)
     return res

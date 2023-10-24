@@ -18,9 +18,9 @@ def fit_and_evaluate(x, y, classifier, kfold, scoring, n_vars ,npop, output_path
                 classifier, cv=kfold, verbose=1,
                 scoring=scoring, max_features=n_vars,
                 n_population=npop, crossover_proba=0.5,
-                mutation_proba=0.2, n_generations=50,
-                tournament_size=3, n_gen_no_change=10,
-                caching=True,)
+                mutation_proba=0.2, n_generations=211,
+                tournament_size=3, n_gen_no_change=21,
+                caching=True)
         model = model.fit(x, y)
         print('Features:', x.columns[model.support_])
         new_features=x.columns[model.support_]

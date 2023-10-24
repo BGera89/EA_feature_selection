@@ -53,7 +53,9 @@ class FeatureSelectionAccuracyCostMultiProblem(ElementwiseProblem):
 
 
 class NSGAAccCost(BaseEstimator, ClassifierMixin):
-    def __init__(self, base_estimator, cv,scale_features=0.5, test_size=0.5, pareto_decision='accuracy', criteria_weights=None, objectives=2, p_size=100, c_prob=0.1, m_prob=0.1):
+    def __init__(self, base_estimator, cv,scale_features=0.5, test_size=0.5, 
+                 pareto_decision='accuracy', criteria_weights=None, objectives=2, 
+                 p_size=500, c_prob=0.1, m_prob=0.1):
         self.base_estimator = base_estimator
         self.test_size = test_size
         self.p_size = p_size

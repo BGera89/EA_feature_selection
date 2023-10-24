@@ -10,16 +10,16 @@ def sfs_fit_and_evaluate(model,X,y,cv, scoring, output_path,n_features=31):
     
     kf=cv
     sfs=SFS(model, k_features=n_features, forward=True, 
-            floating=True, scoring=scoring, cv=kf)
+            floating=True, scoring=scoring, cv=kf, n_jobs=-1)
+
 
     input_var=X.columns.to_list()
 
 
     sfs.fit(X,y)
-
     results=pd.DataFrame.from_dict(sfs.get_metric_dict()).T
-
-    best_model=list(results["avg_score"]).index(max(results["avg_score"]))+1
+    best_model=list(results["avg_score"]).index(max(results["avg_score"]))
+    print(best_model)
     best_vars_n=list(results.iloc[best_model]["feature_names"])
 
 

@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import cross_val_predict, GridSearchCV
 from genetic_selection import GeneticSelectionCV
@@ -24,7 +25,8 @@ def evaluate_classifier(x, y, scoring_metric, classifier_model, kfold_cv, output
     """
     # Generate cross-validated predictions
     predicted_y = cross_val_predict(classifier_model, x, y, cv=kfold_cv)
-
+    non_matching_indexes = np.where(predicted_y != y)
+    print("Indexes that did not match:", non_matching_indexes)
     # Compute confusion matrix and print it
     conf_matrix = confusion_matrix(y, predicted_y)
     conf_matrix_labels = pd.DataFrame(conf_matrix, columns=[

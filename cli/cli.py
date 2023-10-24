@@ -18,7 +18,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import KFold
 from algorithm_functions import train_new_estimator
 
-#from xgboost import XGBClassifier
+
 
 
 # Setting up the arguments for the CLI
@@ -113,10 +113,10 @@ parser.add_argument('--class_weight', type=str, default=None,
 # FS algorithm arguments
 parser.add_argument('-nv', '--n_vars', type=int,
                     help='number of variables to choose from. Default=10',
-                    default=10)
+                    default=31)
 parser.add_argument('-np', '--number_population', type=int,
                     help='The number of the population for each algorithm. Default=100',
-                    default=100)
+                    default=500)
 
 #Iterations
 parser.add_argument('-ib', '--iteration_true', type=bool,
@@ -156,7 +156,7 @@ else:
                                     max_depth=args.max_depth, min_samples_split=args.min_samples_split,
                                     min_samples_leaf=args.min_samples_leaf, max_features=args.max_features,
                                     bootstrap=args.bootstrap, class_weight=args.class_weight, random_state=42,
-                                    n_jobs=8)
+                                    n_jobs=-1)
     param_grid= {
     'n_estimators': [50, 100, 200],
     'max_depth': [None, 10, 20, 30],
